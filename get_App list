@@ -1,0 +1,50 @@
+#调用EXCEL
+$excel = new-object -comobject excel.application
+$workbook = $excel.workbooks.add()
+$workbook.worksheets.item(1).name = "products"
+$sheet = $workbook.worksheets.item("products")
+$excel.visible = $true
+
+#定义枚举类型
+$linestyle = "microsoft.office.interop.excel.xllinestyle" -as [type]
+$colorstyle = "microsoft.office.interop.excel.xlcolorstyle" -as [type]
+$borderWeight = "microsoft.office.interop.excel.xlBorderWeight" -as [type]
+$chartstyle = "microsoft.office.interop.excel.xlchartstyle" -as [type]
+
+#格式化EXCEL
+for($b = 1 ; $b -le 3 ; $b++)
+{
+ $sheet.cells.item(1,$b).font.bold = $true
+ $sheet.cells.item(1,$b).borders.LineStyle = $lineStyle::xlDashDot
+ $sheet.cells.item(1,$b).borders.ColorIndex = $colorstyle::xlColorIndexAutomatic
+ $sheet.cells.item(1,$b).borders.weight = $borderWeight::xlMedium
+}
+
+$sheet.cells.item(1,1) = "name"
+$sheet.cells.item(1,2) = "vendor"
+$sheet.cells.item(1,3) = "Server"
+
+
+#单台机器 
+#$product = get-wmiobject Win32_product | select name,vendor
+
+#批量
+$node = import-csv 'c:\temp\node.csv'
+
+$x=2
+for($i=0;$i -le $node.count;$i++)
+#for($i=0;$i -le 3;$i++)
+{
+$product = get-wmiobject Win32_product -computername $node[$i].name| select name,vendor
+
+foreach($product in $product)
+	{
+$sheet.cells.item($x,1) = $product.name
+$sheet.cells.item($x,2) = $product.vendor
+$sheet.cells.item($x,3) = $node[$i].name
+$x++
+	}
+}
+
+$range = $sheet.usedRange
+$range.EntireColumn.AutoFit() | out-null
